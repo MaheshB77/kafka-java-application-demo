@@ -1,6 +1,7 @@
 package com.kafka.demo.kafkaApplication;
 
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -11,9 +12,8 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ProducerWithCallback {
-	public static void main(String[] args) {
-
+public class ProducerWithKey {
+	public static void main(String[] args) throws InterruptedException, ExecutionException {
 		Logger logger = LoggerFactory.getLogger(ProducerWithCallback.class);
 
 		String bootstrapServer = "127.0.0.1:9092";
@@ -28,8 +28,13 @@ public class ProducerWithCallback {
 		KafkaProducer<String, String> producer = new KafkaProducer<String, String>(properties);
 
 		for (int i = 0; i < 10; i++) {
+			String topic = "secondTopic";
+			String value = "Hello " + i;
+			String key = "Key " + i;
+			
+			
 //		Create producer record
-			ProducerRecord<String, String> record = new ProducerRecord<String, String>("secondTopic", "Hello " + i);
+			ProducerRecord<String, String> record = new ProducerRecord<String, String>(topic, key, value);
 
 //		Send data and see details using the Callback()
 			producer.send(record, new Callback() {
@@ -40,6 +45,7 @@ public class ProducerWithCallback {
 						logger.info("Recieved new metadata !!!!!!!!!!!");
 						logger.info("Topic : " + metadata.topic());
 						logger.info("Partition : " + metadata.partition());
+						logger.info(key);
 						logger.info("Offset : " + metadata.offset());
 						logger.info("Timestamp : " + metadata.timestamp());
 					} else {
@@ -47,13 +53,12 @@ public class ProducerWithCallback {
 						logger.error("Error occured ", exception);
 					}
 				}
-			});
+			}).get();
 		}
 
 //		Flush and close
 		producer.flush();
 		producer.close();
-
 	}
 
 }
